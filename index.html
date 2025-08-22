@@ -1,488 +1,528 @@
 <!DOCTYPE html>
-<html>
- 
+<html lang="zh-CN">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
- 
-    <title>💗</title>
-    <style type="text/css">
-        body {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打地鼠游戏</title>
+    <style>
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #4CAF50;
+            height: 100vh;
             overflow: hidden;
-            background: #000;
+            position: relative;
         }
- 
-        canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
+
+        /* 顶部计分板 */
+        .score-board {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #2196F3;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
- 
-        #pinkboard {
-            animation: anim 1.5s ease-in-out infinite;
-            -webkit-animation: anim 1.5s ease-in-out infinite;
-            -o-animation: anim 1.5s ease-in-out infinite;
-            -moz-animation: anim 1.5s ease-in-out infinite;
+
+        /* 倒计时器 */
+        .timer {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            color: #f44336;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 101;
         }
- 
-        @keyframes anim {
-            0% {
-                transform: scale(0.8);
-            }
- 
-            25% {
-                transform: scale(0.7);
-            }
- 
-            50% {
-                transform: scale(1);
-            }
- 
-            75% {
-                transform: scale(0.7);
-            }
- 
-            100% {
-                transform: scale(0.8);
-            }
+
+        /* 游戏区域 */
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding-top: 80px;
         }
- 
-        @-webkit-keyframes anim {
-            0% {
-                -webkit-transform: scale(0.8);
-            }
- 
-            25% {
-                -webkit-transform: scale(0.7);
-            }
- 
-            50% {
-                -webkit-transform: scale(1);
-            }
- 
-            75% {
-                -webkit-transform: scale(0.7);
-            }
- 
-            100% {
-                -webkit-transform: scale(0.8);
-            }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 20px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
         }
- 
-        @-o-keyframes anim {
-            0% {
-                -o-transform: scale(0.8);
-            }
- 
-            25% {
-                -o-transform: scale(0.7);
-            }
- 
-            50% {
-                -o-transform: scale(1);
-            }
- 
-            75% {
-                -o-transform: scale(0.7);
-            }
- 
-            100% {
-                -o-transform: scale(0.8);
-            }
+
+        /* 地洞 */
+        .hole {
+            width: 100px;
+            height: 100px;
+            background-color: #3E2723;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
         }
- 
-        @-moz-keyframes anim {
-            0% {
-                -moz-transform: scale(0.8);
-            }
- 
-            25% {
-                -moz-transform: scale(0.7);
-            }
- 
-            50% {
-                -moz-transform: scale(1);
-            }
- 
-            75% {
-                -moz-transform: scale(0.7);
-            }
- 
-            100% {
-                -moz-transform: scale(0.8);
-            }
-        }
- 
-        #name {
+
+        /* 地鼠 */
+        .mole {
+            width: 60px;
+            height: 60px;
+            background-color: #795548;
+            border-radius: 50%;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            margin-top: -20px;
-            font-size: 46px;
-            color: pink;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .mole::before,
+        .mole::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: black;
+            border-radius: 50%;
+            top: 20px;
+        }
+
+        .mole::before {
+            left: 15px;
+        }
+
+        .mole::after {
+            right: 15px;
+        }
+
+        .mole.hidden {
+            transform: translate(-50%, 100%);
+            opacity: 0;
+        }
+
+        /* 闪光动画 */
+        @keyframes flash {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .flash {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: flash 0.3s ease-out forwards;
+        }
+
+        /* 游戏状态遮罩 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .game-message {
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .game-message h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 32px;
+        }
+
+        .game-message p {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .game-message button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .game-message button:hover {
+            background-color: #45a049;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
- 
 <body>
-    <canvas id="pinkboard" width="1920" height="947"></canvas>
-    <div id="name">💗我的宝贝💗</div>
-    <canvas id="canvas" width="1920" height="947"></canvas>
- 
-    <script type="text/javascript">
-        const colors = [
-            "#eec996",
-            "#8fb7d3",
-            "#b7d4c6",
-            "#c3bedd",
-            "#f1d5e4",
-            "#cae1d3",
-            "#f3c89d",
-            "#d0b0c3",
-            "#819d53",
-            "#c99294",
-            "#cec884",
-            "#ff8e70",
-            "#e0a111",
-            "#fffdf6",
-            "#cbd7ac",
-            "#e8c6c0",
-            "#dc9898",
-            "#ecc8ba",
-        ];
-        var canvas = document.getElementById("canvas");
-        var ctx = canvas.getContext("2d");
-        let count = 1;
- 
-        var ww = window.innerWidth;
-        var wh = window.innerHeight;
- 
-        var hearts = [];
- 
-        function init() {
-            requestAnimationFrame(render);
-            canvas.width = ww;
-            canvas.height = wh;
-            for (var i = 0; i < 100; i++) {
-                hearts.push(new Heart());
-            }
-        }
- 
-        function Heart() {
-            this.x = Math.random() * ww;
-            this.y = Math.random() * wh;
-            this.opacity = Math.random() * 0.5 + 0.5;
-            this.vel = {
-                x: (Math.random() - 0.5) * 4,
-                y: (Math.random() - 0.5) * 4,
-            };
-            this.targetScale = Math.random() * 0.15 + 0.02;
-            this.scale = this.targetScale * Math.random();
-        }
- 
-        Heart.prototype.update = function (i) {
-            this.x += this.vel.x;
-            this.y += this.vel.y;
- 
-            this.scale += (this.targetScale - this.scale) * 0.01;
-            if (this.x - this.width > ww || this.x + this.width < 0) {
-                this.scale = 0;
-                this.x = Math.random() * ww;
-            }
-            if (this.y - this.height > wh || this.y + this.height < 0) {
-                this.scale = 0;
-                this.y = Math.random() * wh;
-            }
-            this.width = 470;
-            this.height = 400;
-        };
-        Heart.prototype.draw = function (i) {
-            ctx.globalAlpha = this.opacity;
-            ctx.font = `${180 * this.scale}px "微软雅黑"`;
-            ctx.fillStyle = colors[i % 18];
-            ctx.fillText(
-                "我爱你",
-                this.x - this.width * 0.5,
-                this.y - this.height * 0.5,
-                this.width,
-                this.height
-            );
-            
-        };
- 
-        function render() {
-            ctx.clearRect(0, 0, ww, wh);
-            for (var i = 0; i < 100; i++) {
-                hearts[i].update(i);
-                hearts[i].draw(i);
-            }
-            requestAnimationFrame(render);
-        }
-        init();
- 
- 
-        window.addEventListener("resize", function () {
-            ww = window.innerWidth;
-            wh = window.innerHeight;
-        });
-    </script>
+    <!-- 顶部计分板 -->
+    <div class="score-board">
+        分数：<span id="score">0</span>
+    </div>
+    
+    <!-- 倒计时器 -->
+    <div class="timer">
+        <span id="timer">60</span>
+    </div>
+
+    <!-- 游戏区域 -->
+    <div class="game-container">
+        <div class="game-grid" id="gameGrid">
+            <!-- 9个地洞将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <!-- 开始游戏遮罩 -->
+    <div class="overlay" id="startOverlay">
+        <div class="game-message">
+            <h2>打地鼠游戏</h2>
+            <p>按空格键开始游戏</p>
+            <p style="font-size: 14px; color: #999;">ESC键暂停，点击地鼠得分</p>
+        </div>
+    </div>
+
+    <!-- 暂停遮罩 -->
+    <div class="overlay hidden" id="pauseOverlay">
+        <div class="game-message">
+            <h2>游戏暂停</h2>
+            <button onclick="resumeGame()">继续游戏</button>
+            <button onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+
+    <!-- 游戏结束遮罩 -->
+    <div class="overlay hidden" id="gameOverOverlay">
+        <div class="game-message">
+            <h2>游戏结束</h2>
+            <p>最终得分：<span id="finalScore">0</span></p>
+            <button onclick="restartGame()">再玩一次</button>
+        </div>
+    </div>
+
     <script>
- 
-        var settings = {
-            particles: {
-                length: 500,
-                duration: 4,
-                velocity: 100,
-                effect: -0.75,
-                size: 30,
-            },
-        };
- 
-        (function () {
-            var b = 0;
-            var c = ["ms", "moz", "webkit", "o"];
-            for (var a = 0; a < c.length && !window.requestAnimationFrame; ++a) {
-                window.requestAnimationFrame = window[c[a] + "RequestAnimationFrame"];
-                window.cancelAnimationFrame =
-                    window[c[a] + "CancelAnimationFrame"] ||
-                    window[c[a] + "CancelRequestAnimationFrame"];
+        // 游戏状态
+        let gameState = 'ready'; // ready, playing, paused, gameOver
+        let score = 0;
+        let timeLeft = 60;
+        let moles = [];
+        let gameInterval;
+        let timerInterval;
+        let lastMolePosition = -1;
+
+        // 音效
+        const popSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmFgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+
+        // 初始化游戏
+        function initGame() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            // 创建9个地洞
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.dataset.index = i;
+                
+                const mole = document.createElement('div');
+                mole.className = 'mole hidden';
+                mole.dataset.index = i;
+                
+                hole.appendChild(mole);
+                hole.addEventListener('click', handleMoleClick);
+                gameGrid.appendChild(hole);
+                
+                moles.push({
+                    position: i,
+                    visible: false,
+                    appearTime: 0,
+                    element: mole
+                });
             }
-            if (!window.requestAnimationFrame) {
-                window.requestAnimationFrame = function (h, e) {
-                    var d = new Date().getTime();
-                    var f = Math.max(0, 16 - (d - b));
-                    var g = window.setTimeout(function () {
-                        h(d + f);
-                    }, f);
-                    b = d + f;
-                    return g;
-                };
+        }
+
+        // 开始游戏
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            timeLeft = 60;
+            updateScore();
+            updateTimer();
+            
+            document.getElementById('startOverlay').classList.add('hidden');
+            
+            // 开始生成地鼠
+            scheduleNextMole();
+            
+            // 开始倒计时
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // 暂停游戏
+        function pauseGame() {
+            if (gameState !== 'playing') return;
+            
+            gameState = 'paused';
+            clearInterval(timerInterval);
+            document.getElementById('pauseOverlay').classList.remove('hidden');
+        }
+
+        // 继续游戏
+        function resumeGame() {
+            if (gameState !== 'paused') return;
+            
+            gameState = 'playing';
+            document.getElementById('pauseOverlay').classList.add('hidden');
+            
+            // 重新开始倒计时
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            scheduleNextMole();
+        }
+
+        // 重新开始游戏
+        function restartGame() {
+            gameState = 'ready';
+            clearInterval(timerInterval);
+            clearTimeout(gameInterval);
+            
+            // 隐藏所有地鼠
+            moles.forEach(mole => {
+                mole.visible = false;
+                mole.element.classList.add('hidden');
+            });
+            
+            document.getElementById('pauseOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('startOverlay').classList.remove('hidden');
+        }
+
+        // 结束游戏
+        function endGame() {
+            gameState = 'gameOver';
+            clearInterval(timerInterval);
+            clearTimeout(gameInterval);
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+            
+            // 隐藏所有地鼠
+            moles.forEach(mole => {
+                mole.visible = false;
+                mole.element.classList.add('hidden');
+            });
+        }
+
+        // 更新分数
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        // 更新倒计时
+        function updateTimer() {
+            document.getElementById('timer').textContent = timeLeft;
+        }
+
+        // 计算地鼠停留时间（随倒计时减少而减少，最低1.5秒）
+        function calculateMoleStayTime() {
+            const maxTime = 2300; // 最大2.3秒
+            const minTime = 1500; // 最小1.5秒
+            const ratio = timeLeft / 60; // 剩余时间比例
+            return Math.max(minTime, maxTime * ratio);
+        }
+
+        // 安排下一个地鼠出现
+        function scheduleNextMole() {
+            if (gameState !== 'playing') return;
+            
+            const delay = Math.random() * 1500 + 500; // 0.5-2秒
+            gameInterval = setTimeout(() => {
+                showRandomMole();
+            }, delay);
+        }
+
+        // 显示随机地鼠
+        function showRandomMole() {
+            if (gameState !== 'playing') return;
+            
+            // 20秒后，可以同时出现多只地鼠
+            const isMultiMoleTime = timeLeft <= 40;
+            const moleCount = isMultiMoleTime ? 
+                Math.floor(Math.random() * 2) + 2 : // 2-3只地鼠
+                1; // 1只地鼠
+            
+            // 找出所有隐藏的地鼠
+            const hiddenMoles = moles.filter(mole => !mole.visible);
+            if (hiddenMoles.length === 0) {
+                scheduleNextMole();
+                return;
             }
-            if (!window.cancelAnimationFrame) {
-                window.cancelAnimationFrame = function (d) {
-                    clearTimeout(d);
-                };
+            
+            // 随机选择要显示的地鼠
+            const selectedMoles = [];
+            let availableMoles = [...hiddenMoles];
+            
+            // 避免连续在同一位置出现
+            if (lastMolePosition !== -1 && availableMoles.length > 1) {
+                availableMoles = availableMoles.filter(mole => mole.position !== lastMolePosition);
             }
-        })();
- 
- 
-        var Point = (function () {
-            function Point(x, y) {
-                this.x = typeof x !== "undefined" ? x : 0;
-                this.y = typeof y !== "undefined" ? y : 0;
+            
+            if (availableMoles.length === 0) {
+                availableMoles = [...hiddenMoles];
             }
-            Point.prototype.clone = function () {
-                return new Point(this.x, this.y);
-            };
-            Point.prototype.length = function (length) {
-                if (typeof length == "undefined")
-                    return Math.sqrt(this.x * this.x + this.y * this.y);
-                this.normalize();
-                this.x *= length;
-                this.y *= length;
-                return this;
-            };
-            Point.prototype.normalize = function () {
-                var length = this.length();
-                this.x /= length;
-                this.y /= length;
-                return this;
-            };
-            return Point;
-        })();
- 
- 
- 
-        var Particle = (function () {
-            function Particle() {
-                this.position = new Point();
-                this.velocity = new Point();
-                this.acceleration = new Point();
-                this.age = 0;
+            
+            // 选择指定数量的地鼠
+            const actualCount = Math.min(moleCount, availableMoles.length);
+            for (let i = 0; i < actualCount; i++) {
+                if (availableMoles.length === 0) break;
+                
+                const randomIndex = Math.floor(Math.random() * availableMoles.length);
+                const randomMole = availableMoles.splice(randomIndex, 1)[0];
+                
+                randomMole.visible = true;
+                randomMole.appearTime = Date.now();
+                randomMole.element.classList.remove('hidden');
+                
+                if (i === 0) {
+                    lastMolePosition = randomMole.position;
+                }
+                
+                // 根据地鼠停留时间设置隐藏定时器
+                const stayTime = calculateMoleStayTime();
+                setTimeout(() => {
+                    if (randomMole.visible) {
+                        randomMole.visible = false;
+                        randomMole.element.classList.add('hidden');
+                    }
+                }, stayTime);
             }
-            Particle.prototype.initialize = function (x, y, dx, dy) {
-                this.position.x = x;
-                this.position.y = y;
-                this.velocity.x = dx;
-                this.velocity.y = dy;
-                this.acceleration.x = dx * settings.particles.effect;
-                this.acceleration.y = dy * settings.particles.effect;
-                this.age = 0;
-            };
-            Particle.prototype.update = function (deltaTime) {
-                this.position.x += this.velocity.x * deltaTime;
-                this.position.y += this.velocity.y * deltaTime;
-                this.velocity.x += this.acceleration.x * deltaTime;
-                this.velocity.y += this.acceleration.y * deltaTime;
-                this.age += deltaTime;
-            };
-            Particle.prototype.draw = function (context, image) {
-                function ease(t) {
-                    return --t * t * t + 1;
+            
+            scheduleNextMole();
+        }
+
+        // 处理地鼠点击
+        function handleMoleClick(event) {
+            if (gameState !== 'playing') return;
+            
+            const hole = event.currentTarget;
+            const mole = hole.querySelector('.mole');
+            const moleIndex = parseInt(mole.dataset.index);
+            const moleData = moles[moleIndex];
+            
+            if (moleData.visible) {
+                // 计算点击位置
+                const rect = hole.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                // 检查是否击中地鼠（距离小于30px）
+                const distance = Math.sqrt(Math.pow(clickX - centerX, 2) + Math.pow(clickY - centerY, 2));
+                
+                if (distance < 30) {
+                    // 击中地鼠
+                    moleData.visible = false;
+                    mole.classList.add('hidden');
+                    
+                    // 播放音效
+                    popSound.currentTime = 0;
+                    popSound.play().catch(() => {});
+                    
+                    // 增加分数
+                    score += 10;
+                    updateScore();
+                    
+                    // 显示闪光效果
+                    showFlashEffect(event.clientX, event.clientY);
                 }
-                var size = image.width * ease(this.age / settings.particles.duration);
-                context.globalAlpha = 1 - this.age / settings.particles.duration;
-                context.drawImage(
-                    image,
-                    this.position.x - size / 2,
-                    this.position.y - size / 2,
-                    size,
-                    size
-                );
-            };
-            return Particle;
-        })();
- 
- 
-        var ParticlePool = (function () {
-            var particles,
-                firstActive = 0,
-                firstFree = 0,
-                duration = settings.particles.duration;
- 
-            function ParticlePool(length) {
- 
-                particles = new Array(length);
-                for (var i = 0; i < particles.length; i++)
-                    particles[i] = new Particle();
             }
-            ParticlePool.prototype.add = function (x, y, dx, dy) {
-                particles[firstFree].initialize(x, y, dx, dy);
- 
- 
-                firstFree++;
-                if (firstFree == particles.length) firstFree = 0;
-                if (firstActive == firstFree) firstActive++;
-                if (firstActive == particles.length) firstActive = 0;
-            };
-            ParticlePool.prototype.update = function (deltaTime) {
-                var i;
-                if (firstActive < firstFree) {
-                    for (i = firstActive; i < firstFree; i++)
-                        particles[i].update(deltaTime);
+        }
+
+        // 显示闪光效果
+        function showFlashEffect(x, y) {
+            const flash = document.createElement('div');
+            flash.className = 'flash';
+            flash.style.left = (x - 20) + 'px';
+            flash.style.top = (y - 20) + 'px';
+            document.body.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.remove();
+            }, 300);
+        }
+
+        // 键盘事件监听
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && gameState === 'ready') {
+                event.preventDefault();
+                startGame();
+            } else if (event.code === 'Escape') {
+                event.preventDefault();
+                if (gameState === 'playing') {
+                    pauseGame();
+                } else if (gameState === 'paused') {
+                    resumeGame();
                 }
-                if (firstFree < firstActive) {
-                    for (i = firstActive; i < particles.length; i++)
-                        particles[i].update(deltaTime);
-                    for (i = 0; i < firstFree; i++) particles[i].update(deltaTime);
-                }
- 
-                while (
-                    particles[firstActive].age >= duration &&
-                    firstActive != firstFree
-                ) {
-                    firstActive++;
-                    if (firstActive == particles.length) firstActive = 0;
-                }
-            };
-            ParticlePool.prototype.draw = function (context, image) {
- 
-                if (firstActive < firstFree) {
-                    for (i = firstActive; i < firstFree; i++)
-                        particles[i].draw(context, image);
-                }
-                if (firstFree < firstActive) {
-                    for (i = firstActive; i < particles.length; i++)
-                        particles[i].draw(context, image);
-                    for (i = 0; i < firstFree; i++) particles[i].draw(context, image);
-                }
-            };
-            return ParticlePool;
-        })();
- 
- 
-        (function (canvas) {
-            var context = canvas.getContext("2d"),
-                particles = new ParticlePool(settings.particles.length),
-                particleRate =
-                    settings.particles.length / settings.particles.duration, // particles/sec
-                time;
- 
-            function pointOnHeart(t) {
-                return new Point(
-                    160 * Math.pow(Math.sin(t), 3),
-                    130 * Math.cos(t) -
-                    50 * Math.cos(2 * t) -
-                    20 * Math.cos(3 * t) -
-                    10 * Math.cos(4 * t) +
-                    25
-                );
             }
- 
-            var image = (function () {
-                var canvas = document.createElement("canvas"),
-                    context = canvas.getContext("2d");
-                canvas.width = settings.particles.size;
-                canvas.height = settings.particles.size;
-                function to(t) {
-                    var point = pointOnHeart(t);
-                    point.x =
-                        settings.particles.size / 2 +
-                        (point.x * settings.particles.size) / 350;
-                    point.y =
-                        settings.particles.size / 2 -
-                        (point.y * settings.particles.size) / 350;
-                    return point;
-                }
-                context.beginPath();
-                var t = -Math.PI;
-                var point = to(t);
-                context.moveTo(point.x, point.y);
-                while (t < Math.PI) {
-                    t += 0.01;
-                    point = to(t);
-                    context.lineTo(point.x, point.y);
-                }
-                context.closePath();
-                context.fillStyle = "pink";
-                context.fill();
-                var image = new Image();
-                image.src = canvas.toDataURL();
-                return image;
-            })();
- 
-            function render() {
-                requestAnimationFrame(render);
- 
-                var newTime = new Date().getTime() / 1000,
-                    deltaTime = newTime - (time || newTime);
-                time = newTime;
- 
-                context.clearRect(0, 0, canvas.width, canvas.height);
- 
-                var amount = particleRate * deltaTime;
-                for (var i = 0; i < amount; i++) {
-                    var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
-                    var dir = pos.clone().length(settings.particles.velocity);
-                    particles.add(
-                        canvas.width / 2 + pos.x,
-                        canvas.height / 2 - pos.y,
-                        dir.x,
-                        -dir.y
-                    );
-                }
- 
-                particles.update(deltaTime);
-                particles.draw(context, image);
-            }
- 
-            function onResize() {
-                canvas.width = canvas.clientWidth;
-                canvas.height = canvas.clientHeight;
-            }
-            window.onresize = onResize;
- 
-            setTimeout(function () {
-                onResize();
-                render();
-            }, 10);
-        })(document.getElementById("pinkboard"));
- 
+        });
+
+        // 初始化
+        initGame();
     </script>
- 
 </body>
- 
 </html>
-
-
