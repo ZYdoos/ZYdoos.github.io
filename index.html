@@ -5,12 +5,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>💗</title>
     <style type="text/css">
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000;
-        }
- 
+            body {
+    margin: 0;
+    overflow: hidden;
+              background: #080822; 
+    
+    }
+         
         canvas {
             position: absolute;
             width: 100%;
@@ -18,7 +19,7 @@
         }
  
         #pinkboard {
-            animation: anim 1.5s ease-in-out infinite;
+            animation: anim 4.5s ease-in-out infinite;
             -webkit-animation: anim 1.5s ease-in-out infinite;
             -o-animation: anim 1.5s ease-in-out infinite;
             -moz-animation: anim 1.5s ease-in-out infinite;
@@ -90,14 +91,16 @@
  
 <body>
     <canvas id="pinkboard" width="1920" height="947"></canvas>
-    <div id="name">❤我的小歪❤</div>
+    <div id="name">💗小歪~💗</div>
     <canvas id="canvas" width="1920" height="947"></canvas>
     <!-- 音乐控制按钮 -->
     <div id="musicControl">▶</div>
     <!-- 音乐元素 -->
-    <audio id="backgroundMusic" loop>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-     您的浏览器不支持音频播放
+   <audio id="backgroundMusic" loop>
+    <source src="myMusic.mp3" type="audio/mpeg">
+    您的浏览器不支持音频播放
+</audio>
+
     </audio>
  
     <script type="text/javascript">
@@ -108,7 +111,8 @@
             "我会哄你一辈子",
             "想听你一直一直叫我",
             "我想我会每天都亲亲你 mua~",
-            "宝贝！宝贝！"
+            "宝贝！宝贝！",
+            "I LOVE YOU~"
         ];
         
         const colors = [
@@ -131,7 +135,7 @@
             requestAnimationFrame(render);
             canvas.width = ww;
             canvas.height = wh;
-            for (var i = 0; i < 100; i++) {
+            for (var i = 20; i < 200; i++) {
                 hearts.push(new Heart());
             }
         }
@@ -139,7 +143,7 @@
         function Heart() {
             this.x = Math.random() * ww;
             this.y = Math.random() * wh;
-            this.opacity = Math.random() * 0.5 + 0.5;
+            this.opacity = Math.random() * 0.6 + 0.5;
             this.vel = {
                 x: (Math.random() - 0.5) * 4,
                 y: (Math.random() - 0.5) * 4,
@@ -229,9 +233,9 @@
         var settings = {
             particles: {
                 length: 600,  // 增加粒子数量
-                duration: 4,
-                velocity: 100,
-                effect: -0.75,
+                duration: 4.5, 
+                velocity: 50,
+                effect: -0.8,
                 size: 40,  // 增大粒子大小
             },
         };
